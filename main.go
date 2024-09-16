@@ -15,7 +15,7 @@ import (
 
 type User struct {
 	Id int	`json:"id"`
-	Username string `json:"username"`
+	Name string `json:"name"`
 	Email string `json:"email"`
 }
 
@@ -47,6 +47,7 @@ func getUsers(responseWriter http.ResponseWriter, request *http.Request) {
 	rows, queryErr := db.Query("SELECT id, name, email FROM users");
 	if queryErr != nil {
 		fmt.Println("ERROR (QUERY ERROR): ",queryErr);
+		return;
 	}
 	defer rows.Close();
 	
@@ -54,7 +55,7 @@ func getUsers(responseWriter http.ResponseWriter, request *http.Request) {
 
 	for rows.Next() {
 		var user User;
-		scanErr := rows.Scan(&user.Id, &user.Username, &user.Email);
+		scanErr := rows.Scan(&user.Id, &user.Name, &user.Email);
 		if scanErr != nil {
 			fmt.Println("ERROR: ",scanErr);
 		}
@@ -63,6 +64,35 @@ func getUsers(responseWriter http.ResponseWriter, request *http.Request) {
 	}
 
 	json.NewEncoder(responseWriter).Encode(users);
+}
+
+func createUser(responseWriter http.ResponseWriter, request *http.Request) {
+	responseWriter.Header().Set("Content-Type", "application/json");
+
+	var createUser User;
+	parsingErr := json.NewDecoder(request.Body).Decode(&createUser);
+	if parsingErr != nil {
+		http.Error(responseWriter, "Invalid Request", http.StatusBadRequest);
+		return;
+	}
+
+	db, dbErr := connectToDatabase();
+	if dbErr != nil {
+		fmt.Println("ERROR (DB ERROR): ",dbErr);
+		return;
+	}
+	defer db.Close();
+
+	query := "INSERT INTO users (name, email) VALUES (?, ?)";
+	result, queryErr := db.Exec(query, createUser.Name, createUser.Email);
+	if queryErr != nil {
+		fmt.Println("ERROR (QUERY ERROR): ", queryErr.Error());
+	}
+
+	id, _ := result.LastInsertId();
+	createUser.Id = int(id);
+
+	json.NewEncoder(responseWriter).Encode(createUser);
 }
 
 func main() {
@@ -74,6 +104,8 @@ func main() {
 
 	router := mux.NewRouter();
 	router.HandleFunc("/users", getUsers).Methods("GET");
+	router.HandleFunc("/createuser", createUser).Methods("POST");
+
 
 	var PORT = os.Getenv("PORT");
 	log.Printf("Starting server on port %s", PORT);
