@@ -19,6 +19,10 @@ type User struct {
 	Email string `json:"email"`
 }
 
+type Response struct {
+	Message string `json:"message"`
+}
+
 func connectToDatabase() (*sql.DB, error) {
 	var host string = os.Getenv("MYSQL_HOST");
 	var username string = os.Getenv("MYSQL_USERNAME");
@@ -87,12 +91,50 @@ func createUser(responseWriter http.ResponseWriter, request *http.Request) {
 	result, queryErr := db.Exec(query, createUser.Name, createUser.Email);
 	if queryErr != nil {
 		fmt.Println("ERROR (QUERY ERROR): ", queryErr.Error());
+		return;
 	}
 
 	id, _ := result.LastInsertId();
 	createUser.Id = int(id);
 
 	json.NewEncoder(responseWriter).Encode(createUser);
+}
+
+func deleteUser(responseWriter http.ResponseWriter, request *http.Request) {
+	variables := mux.Vars(request);
+	userId := variables["id"];
+
+	responseWriter.Header().Set("Content-Type", "application/json");
+
+	db, dbErr := connectToDatabase();
+	if dbErr != nil {
+		fmt.Println("ERROR (DB ERROR): ",dbErr);
+		return;
+	}
+	defer db.Close();
+
+	query := "DELETE FROM users WHERE id = ?";
+	result, queryErr := db.Exec(query, userId);
+
+	if queryErr != nil {
+		fmt.Println("ERROR (QUERY ERROR): ", queryErr.Error());
+		return;
+	}
+
+	rowsAffected, _ := result.RowsAffected();
+
+	var response Response;
+	if rowsAffected == 0 {
+		response = Response {
+			Message: "User with the id "+userId+" does not exist",
+		}
+		responseWriter.WriteHeader(http.StatusNotFound);
+	} else {
+		response = Response {
+			Message: "User with the id "+userId+" is deleted",
+		}
+	}
+	json.NewEncoder(responseWriter).Encode(response);
 }
 
 func main() {
@@ -105,6 +147,7 @@ func main() {
 	router := mux.NewRouter();
 	router.HandleFunc("/users", getUsers).Methods("GET");
 	router.HandleFunc("/createuser", createUser).Methods("POST");
+	router.HandleFunc("/deleteuser/{id}", deleteUser).Methods("DELETE");
 
 
 	var PORT = os.Getenv("PORT");
