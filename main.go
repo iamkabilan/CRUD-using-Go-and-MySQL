@@ -30,6 +30,7 @@ func main() {
 
 	router := mux.NewRouter()
 	router.HandleFunc("/users", controllers.GetUsers).Methods("GET")
+	router.HandleFunc("/exportusers", controllers.ExportUsers).Methods("GET")
 	router.HandleFunc("/createuser", controllers.CreateUser).Methods("POST")
 	router.HandleFunc("/deleteuser/{id}", controllers.DeleteUser).Methods("DELETE")
 
