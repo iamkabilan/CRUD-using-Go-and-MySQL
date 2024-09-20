@@ -32,6 +32,7 @@ func main() {
 	router.HandleFunc("/users", controllers.GetUsers).Methods("GET")
 	router.HandleFunc("/exportusers", controllers.ExportUsers).Methods("GET")
 	router.HandleFunc("/createuser", controllers.CreateUser).Methods("POST")
+	router.HandleFunc("/updateuser/{id}", controllers.UpdateUser).Methods("PUT")
 	router.HandleFunc("/deleteuser/{id}", controllers.DeleteUser).Methods("DELETE")
 
 	var PORT = os.Getenv("PORT")
