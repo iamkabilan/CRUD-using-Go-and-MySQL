@@ -38,6 +38,10 @@ func GetDB() *sql.DB {
 	return db
 }
 
+func getRedis() *redis.Client {
+	return redisDb
+}
+
 func ConnectToDatabase() (*sql.DB, error) {
 	host := os.Getenv("MYSQL_HOST")
 	username := os.Getenv("MYSQL_USERNAME")
