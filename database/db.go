@@ -38,7 +38,7 @@ func GetDB() *sql.DB {
 	return db
 }
 
-func getRedis() *redis.Client {
+func GetRedis() *redis.Client {
 	return redisDb
 }
 
