@@ -6,6 +6,11 @@ type User struct {
 	Email string `json:"email"`
 }
 
+type UserRedis struct {
+	User
+	Timestamp int64 `json:"timestamp"`
+}
+
 type Response struct {
 	Message string `json:"message"`
 }
