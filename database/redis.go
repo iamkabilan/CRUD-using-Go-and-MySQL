@@ -36,3 +36,13 @@ func InsertUser(redisConn *redis.Client, key string, user any, ctx context.Conte
 
 	return true
 }
+
+func GetUsers(redisConn *redis.Client, key string, ctx context.Context) []string {
+	users, err := redisConn.LRange(ctx, key, 0, -1).Result()
+	if err != nil {
+		fmt.Println("Error in fetching the users, ", err)
+		return []string{}
+	}
+
+	return users
+}
