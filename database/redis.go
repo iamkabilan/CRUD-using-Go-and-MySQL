@@ -46,3 +46,13 @@ func GetUsers(redisConn *redis.Client, key string, ctx context.Context) []string
 
 	return users
 }
+
+func DeleteKey(redisConn *redis.Client, key string, ctx context.Context) bool {
+	_, err := redisConn.Del(ctx, key).Result()
+	if err != nil {
+		fmt.Println("Error in deleting the key, ", err)
+		return false
+	}
+
+	return true
+}
