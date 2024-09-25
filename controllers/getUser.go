@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/iamkabilan/CRUD-using-Go-and-MYSQL/database"
@@ -33,20 +34,44 @@ func GetUser(responseWriter http.ResponseWriter, request *http.Request) {
 	ctx := context.Background()
 
 	var users []User
+	var redisUsers []UserRedis
 	result := database.GetUsers(redisConn, "users", ctx)
 
 	for _, userJson := range result {
 		var user User
+		var redisUser UserRedis
 		json.Unmarshal([]byte(userJson), &user)
+		json.Unmarshal([]byte(userJson), &redisUser)
 		users = append(users, user)
+		redisUsers = append(redisUsers, redisUser)
 	}
 
 	id, _ := strconv.Atoi(userId)
 	userExist := findUser(users, int(id))
 
 	if userExist != nil {
-		json.NewEncoder(responseWriter).Encode(userExist)
 		log.Println("User exist in Redis....")
+		json.NewEncoder(responseWriter).Encode(userExist)
+
+		var redisUser UserRedis = UserRedis{
+			User: User{
+				Id:    userExist.Id,
+				Name:  userExist.Name,
+				Email: userExist.Email,
+			},
+			Timestamp: time.Now().Unix(),
+		}
+
+		isDeleted := database.DeleteKey(redisConn, "users", ctx)
+		if isDeleted {
+			for _, user := range redisUsers {
+				if user.Id != userExist.Id {
+					database.InsertUser(redisConn, "users", user, ctx)
+				}
+			}
+		}
+
+		database.InsertUser(redisConn, "user", redisUser, ctx)
 	} else {
 		log.Println("User does not exist in Redis....")
 
